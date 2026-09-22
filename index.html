@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Прости меня?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;1,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #FDF6EC;
+    --ink-dim: #CBB9D8;
+    --bg-1: #241732;
+    --bg-2: #3A1F47;
+    --pink: #FF6E9C;
+    --pink-deep: #E24E82;
+    --gold: #F4C95D;
+    --sage: #8FD1B5;
+    --card: rgba(255,255,255,0.06);
+    --card-border: rgba(255,255,255,0.14);
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --ink: #2B1B3D;
+      --ink-dim: #6B5B7B;
+      --bg-1: #FBEFE3;
+      --bg-2: #F6DCE8;
+      --card: rgba(255,255,255,0.55);
+      --card-border: rgba(43,27,61,0.12);
+    }
+  }
+  :root[data-theme="light"]{
+    --ink: #2B1B3D;
+    --ink-dim: #6B5B7B;
+    --bg-1: #FBEFE3;
+    --bg-2: #F6DCE8;
+    --card: rgba(255,255,255,0.55);
+    --card-border: rgba(43,27,61,0.12);
+  }
+  html{
+    scroll-padding-top: env(safe-area-inset-top, 0px);
+    height:100%;
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    height:100%;
+    min-height:100dvh;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(255,110,156,0.25), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(143,209,181,0.16), transparent 50%),
+      linear-gradient(160deg, var(--bg-1), var(--bg-2));
+    color: var(--ink);
+    font-family: 'Nunito', system-ui, sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  .stage{
+    width:100%;
+    max-width:480px;
+    padding: 32px 20px;
+    display:flex;
+    justify-content:center;
+    position:relative;
+    z-index:2;
+  }
+
+  .card{
+    width:100%;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(14px);
+    border-radius: 28px;
+    padding: 44px 32px 40px;
+    text-align:center;
+    box-shadow: 0 30px 60px -25px rgba(20,8,30,0.55);
+    position:relative;
+    min-height: 320px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap: 6px;
+  }
+
+  .eyebrow{
+    font-family:'Fredoka', system-ui, sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    color: var(--gold);
+    margin: 0 0 4px;
+  }
+
+  h1{
+    font-family:'Fredoka', system-ui, sans-serif;
+    font-weight: 600;
+    font-size: clamp(1.7rem, 6vw, 2.3rem);
+    line-height: 1.25;
+    margin: 0 0 8px;
+  }
+
+  p.sub{
+    color: var(--ink-dim);
+    font-size: 0.98rem;
+    margin: 0 0 28px;
+    max-width: 32ch;
+  }
+
+  .row{
+    display:flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content:center;
+    position: relative;
+    width: 100%;
+    min-height: 60px;
+  }
+
+  button{
+    font-family:'Fredoka', system-ui, sans-serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    border-radius: 999px;
+    padding: 14px 30px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  button:focus-visible{
+    outline: 3px solid var(--gold);
+    outline-offset: 3px;
+  }
+
+  #yes{
+    background: linear-gradient(135deg, var(--pink), var(--pink-deep));
+    color: #fff;
+    box-shadow: 0 12px 24px -10px rgba(226,78,130,0.55);
+  }
+  #yes:hover{ transform: translateY(-2px) scale(1.03); }
+  #yes:active{ transform: translateY(0) scale(0.98); }
+
+  #no{
+    background: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--card-border);
+    position: relative;
+  }
+  #no.dodging{
+    position: fixed;
+    z-index: 10;
+  }
+
+  .hint{
+    margin-top: 22px;
+    font-size: 0.85rem;
+    color: var(--ink-dim);
+    min-height: 1.2em;
+    font-style: italic;
+  }
+
+  /* Yes result */
+  .yes-result{
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    gap: 10px;
+  }
+  .yes-result.show{ display:flex; }
+  .yay{
+    font-family:'Fredoka', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: clamp(2.4rem, 11vw, 3.6rem);
+    background: linear-gradient(120deg, var(--gold), var(--pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin: 0;
+    animation: pop 0.5s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes pop{
+    0%{ transform: scale(0.5); opacity:0; }
+    100%{ transform: scale(1); opacity:1; }
+  }
+
+  /* No result / why */
+  .why-block{
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    gap: 14px;
+    width:100%;
+  }
+  .why-block.show{ display:flex; }
+  textarea{
+    width:100%;
+    max-width: 340px;
+    min-height: 90px;
+    border-radius: 16px;
+    border: 1px solid var(--card-border);
+    background: rgba(255,255,255,0.08);
+    color: var(--ink);
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.95rem;
+    padding: 14px;
+    resize: vertical;
+  }
+  textarea::placeholder{ color: var(--ink-dim); }
+  #sendWhy{
+    background: linear-gradient(135deg, var(--sage), #5FBF9A);
+    color: #17301F;
+  }
+  .thanks{
+    display:none;
+    color: var(--ink);
+    font-size: 1.05rem;
+    line-height:1.5;
+  }
+  .thanks.show{ display:block; }
+
+  .hearts-canvas{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index: 1;
+  }
+  .heart{
+    position:absolute;
+    font-size: 22px;
+    animation: rise linear forwards;
+    opacity: 0.9;
+  }
+  @keyframes rise{
+    from{ transform: translateY(0) rotate(0deg); opacity: 0.9; }
+    to{ transform: translateY(-110vh) rotate(25deg); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    #yes, .yay, .heart{ animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="hearts-canvas" id="hearts" aria-hidden="true"></div>
+
+  <div class="stage">
+    <div class="card" id="card">
+
+      <div id="question">
+        <p class="eyebrow">между нами</p>
+        <h1>Ты меня простишь?</h1>
+        <p class="sub">Я правда сожалею. Выбери, пожалуйста.</p>
+        <div class="row">
+          <button id="yes" type="button">Да</button>
+          <button id="no" type="button">Нет</button>
+        </div>
+        <p class="hint" id="hint"></p>
+      </div>
+
+      <div class="yes-result" id="yesResult">
+        <p class="yay">Ураааа!!! 🎉</p>
+        <p class="sub" style="margin:0;">Спасибо, что дал(а) нам ещё один шанс.</p>
+      </div>
+
+      <div class="why-block" id="whyBlock">
+        <h1 style="font-size:1.6rem;">Почему?</h1>
+        <p class="sub" style="margin:0;">Можешь рассказать — я правда хочу понять.</p>
+        <textarea id="whyText" placeholder="Напиши здесь..."></textarea>
+        <button id="sendWhy" type="button">Отправить</button>
+      </div>
+
+      <div class="thanks" id="thanks">
+        <p>Спасибо, что честно рассказал(а). 💭</p>
+        <p class="sub" style="margin:0;">Я подумаю над этим и постараюсь всё исправить.</p>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+(function(){
+  const noBtn = document.getElementById('no');
+  const yesBtn = document.getElementById('yes');
+  const card = document.getElementById('card');
+  const hint = document.getElementById('hint');
+  const question = document.getElementById('question');
+  const yesResult = document.getElementById('yesResult');
+  const whyBlock = document.getElementById('whyBlock');
+  const thanks = document.getElementById('thanks');
+  const sendWhy = document.getElementById('sendWhy');
+  const heartsLayer = document.getElementById('hearts');
+
+  const dodgeMessages = [
+    'Ну уж нет 🙈',
+    'Почти поймал(а)!',
+    'Не в этот раз...',
+    'Ладно-ладно, ещё одна попытка',
+    'Быстрее нужно!',
+    'Ты точно её не поймаешь 😏'
+  ];
+
+  let dodging = false;
+
+  function rectOf(el){ return el.getBoundingClientRect(); }
+
+  function moveNoButton(){
+    if (!dodging){
+      dodging = true;
+      noBtn.classList.add('dodging');
+    }
+
+    // Measure the button's real size once it's fixed-positioned.
+    noBtn.style.left = '0px';
+    noBtn.style.top = '0px';
+    const w = noBtn.offsetWidth || 110;
+    const h = noBtn.offsetHeight || 48;
+
+    // Use the visual viewport when available so on mobile the button
+    // stays inside what's actually visible (accounts for browser UI,
+    // zoom, and on-screen keyboard), regardless of screen resolution.
+    const vv = window.visualViewport;
+    const viewW = vv ? vv.width : document.documentElement.clientWidth;
+    const viewH = vv ? vv.height : document.documentElement.clientHeight;
+    const offsetX = vv ? vv.offsetLeft : 0;
+    const offsetY = vv ? vv.offsetTop : 0;
+
+    const style = getComputedStyle(document.documentElement);
+    const safeTop = parseFloat(style.getPropertyValue('--sat')) || 0;
+    const safeBottom = parseFloat(style.getPropertyValue('--sab')) || 0;
+
+    const margin = 16;
+    const minX = offsetX + margin;
+    const minY = offsetY + margin + safeTop;
+    const maxX = offsetX + viewW - w - margin;
+    const maxY = offsetY + viewH - h - margin - safeBottom;
+
+    const x = maxX > minX ? minX + Math.random() * (maxX - minX) : minX;
+    const y = maxY > minY ? minY + Math.random() * (maxY - minY) : minY;
+
+    noBtn.style.left = x + 'px';
+    noBtn.style.top = y + 'px';
+  }
+
+  function nearNo(clientX, clientY){
+    const r = rectOf(noBtn);
+    const cx = r.left + r.width/2;
+    const cy = r.top + r.height/2;
+    const dist = Math.hypot(clientX - cx, clientY - cy);
+    return dist < 90;
+  }
+
+  function handlePointer(e){
+    const x = e.clientX, y = e.clientY;
+    if (x === undefined) return;
+    if (nearNo(x, y)){
+      moveNoButton();
+      hint.textContent = dodgeMessages[Math.floor(Math.random() * dodgeMessages.length)];
+    }
+  }
+
+  window.addEventListener('mousemove', handlePointer);
+
+  // Keep the button on-screen if the viewport changes (rotation, resize,
+  // browser UI showing/hiding) while it's mid-dodge.
+  function clampIfDodging(){
+    if (dodging) moveNoButton();
+  }
+  window.addEventListener('resize', clampIfDodging);
+  window.addEventListener('orientationchange', clampIfDodging);
+  if (window.visualViewport){
+    window.visualViewport.addEventListener('resize', clampIfDodging);
+  }
+
+  // touch: "Нет" always dodges — it can never be tapped
+  noBtn.addEventListener('touchstart', function(e){
+    e.preventDefault();
+    moveNoButton();
+    hint.textContent = dodgeMessages[Math.floor(Math.random() * dodgeMessages.length)];
+  }, { passive:false });
+
+  function spawnHearts(n){
+    for (let i=0;i<n;i++){
+      const el = document.createElement('span');
+      el.className = 'heart';
+      el.textContent = ['💖','✨','💛','🎉'][i % 4];
+      el.style.left = (Math.random()*100) + 'vw';
+      el.style.bottom = '-10vh';
+      el.style.animationDuration = (2.2 + Math.random()*1.6) + 's';
+      el.style.fontSize = (16 + Math.random()*18) + 'px';
+      heartsLayer.appendChild(el);
+      setTimeout(()=> el.remove(), 4200);
+    }
+  }
+
+  yesBtn.addEventListener('click', function(){
+    question.style.display = 'none';
+    yesResult.classList.add('show');
+    spawnHearts(18);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let bursts = 0;
+    const t = setInterval(()=>{
+      spawnHearts(10);
+      bursts++;
+      if (bursts > 2) clearInterval(t);
+    }, 700);
+  });
+
+  noBtn.addEventListener('click', function(e){
+    e.preventDefault();
+    moveNoButton();
+    hint.textContent = dodgeMessages[Math.floor(Math.random() * dodgeMessages.length)];
+  });
+
+  sendWhy.addEventListener('click', function(){
+    whyBlock.classList.remove('show');
+    thanks.classList.add('show');
+  });
+
+})();
+</script>
+</body>
+</html>
