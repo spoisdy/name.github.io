@@ -244,6 +244,32 @@
     to{ transform: translateY(-110vh) rotate(25deg); opacity: 0; }
   }
 
+  /* Screamer Overlay */
+  #screamer {
+    position: fixed;
+    inset: 0;
+    background-color: #000;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  #screamer.active {
+    display: flex;
+    animation: flash 0.1s infinite alternate;
+  }
+  #screamer img {
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    transform: scale(1.1);
+  }
+  @keyframes flash {
+    0% { filter: brightness(1) contrast(1); }
+    100% { filter: brightness(1.6) contrast(1.4) invert(0.1); }
+  }
+
   @media (prefers-reduced-motion: reduce){
     #yes, .yay, .heart{ animation: none !important; transition: none !important; }
   }
@@ -286,6 +312,11 @@
     </div>
   </div>
 
+  <!-- Элементы для скримера -->
+  <div id="screamer">
+    <img id="goldenFreddyImg" src="https://static.wikia.nocookie.net/freddy-fazbears-pizza/images/0/07/GoldenFreddyFNAF1.png" alt="IT'S ME">
+  </div>
+
 <script>
 (function(){
   const noBtn = document.getElementById('no');
@@ -298,6 +329,7 @@
   const thanks = document.getElementById('thanks');
   const sendWhy = document.getElementById('sendWhy');
   const heartsLayer = document.getElementById('hearts');
+  const screamer = document.getElementById('screamer');
 
   const dodgeMessages = [
     'Ну уж нет 🙈',
@@ -309,24 +341,79 @@
   ];
 
   let dodging = false;
+  let noAttempts = 0; // Счётчик уклонений/нажатий на "Нет"
+
+  // Генерируем звук скримера с помощью Web Audio API (громкий микс низкой и высокой частоты)
+  function playScreamerSound() {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+
+      // Низкий ревущий осциллятор
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sawtooth';
+      osc1.frequency.setValueAtTime(80, ctx.currentTime);
+      osc1.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 1.8);
+      gain1.gain.setValueAtTime(1, ctx.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.8);
+
+      // Высокий визжащий осциллятор
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'square';
+      osc2.frequency.setValueAtTime(1200, ctx.currentTime);
+      osc2.frequency.linearRampToValueAtTime(400, ctx.currentTime + 1.8);
+      gain2.gain.setValueAtTime(0.8, ctx.currentTime);
+      gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.8);
+
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+
+      osc1.start();
+      osc2.start();
+      osc1.stop(ctx.currentTime + 1.8);
+      osc2.stop(ctx.currentTime + 1.8);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function triggerScreamer() {
+    screamer.classList.add('active');
+    playScreamerSound();
+    
+    // Скрываем скример через 2 секунды
+    setTimeout(() => {
+      screamer.classList.remove('active');
+    }, 2000);
+  }
+
+  function registerNoAttempt() {
+    noAttempts++;
+    if (noAttempts === 5) {
+      triggerScreamer();
+    }
+  }
 
   function rectOf(el){ return el.getBoundingClientRect(); }
 
   function moveNoButton(){
+    registerNoAttempt();
+
     if (!dodging){
       dodging = true;
       noBtn.classList.add('dodging');
     }
 
-    // Measure the button's real size once it's fixed-positioned.
     noBtn.style.left = '0px';
     noBtn.style.top = '0px';
     const w = noBtn.offsetWidth || 110;
     const h = noBtn.offsetHeight || 48;
 
-    // Use the visual viewport when available so on mobile the button
-    // stays inside what's actually visible (accounts for browser UI,
-    // zoom, and on-screen keyboard), regardless of screen resolution.
     const vv = window.visualViewport;
     const viewW = vv ? vv.width : document.documentElement.clientWidth;
     const viewH = vv ? vv.height : document.documentElement.clientHeight;
@@ -369,8 +456,6 @@
 
   window.addEventListener('mousemove', handlePointer);
 
-  // Keep the button on-screen if the viewport changes (rotation, resize,
-  // browser UI showing/hiding) while it's mid-dodge.
   function clampIfDodging(){
     if (dodging) moveNoButton();
   }
@@ -380,7 +465,6 @@
     window.visualViewport.addEventListener('resize', clampIfDodging);
   }
 
-  // touch: "Нет" always dodges — it can never be tapped
   noBtn.addEventListener('touchstart', function(e){
     e.preventDefault();
     moveNoButton();
